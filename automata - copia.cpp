@@ -28,55 +28,63 @@
 #include <string>
 using namespace std;
 
-struct Conjunto {
-	int length;
-	int* elementos;
-};
+//struct Conjunto {
+//	int length;
+//	int* elementos;
+//};
 
 // struct state
 
-struct State {
-	string label;
-	int id;
+class State {
+	string _label;
+	int _id;
+public:
+	State() : _label(""), _id(0) {};
+	State(string label, int id) : _label(label), _id(id) {};
+	void setLabel(string label);
+	void setID(int id);
+	string getLabel();
+	int getID();
+
 };
 
 
 class Automata
 {
-	vector<struct State> _states;
-	vector<struct State> _inputs;
-	vector<vector<vector<struct State>>> _delta;
-	struct State _initialState;
-	vector<struct State> _finalStates;
+	vector<State> _states;
+	vector<State> _inputs;
+	vector<vector<vector<State>>> _delta;
+	State _initialState;
+	vector<State> _finalStates;
 public:
-	Automata(const vector<struct State>& states, const vector<struct State>& inputs,
-		const vector<vector<vector<struct State>>>& delta, const struct State initialState, 
-		const vector<struct State> finalStates);
-	void setStates(const vector<struct State>& states) { _states = states; };
-	void setInputs(const vector<struct State>& inputs) { _inputs = inputs; };
-	void setDelta(const vector<vector<vector<struct State>>>& delta) { _delta = delta; };
-	void setInitialState(const struct State& initialState) { _initialState = initialState; };
-	void setFinalStates(const vector<struct State>& finalStates) { _finalStates = finalStates; };
-	vector<struct State> getStates() const { return _states; };
-	vector<struct State> getInputs() const { return _inputs; };
-	vector<vector<vector<struct State>>> getDelta() const { return _delta; };
-	struct State getInitialState() const { return _initialState; };
-	vector<struct State> getfinalStates() const { return _finalStates; };
+	Automata(const vector<State>& states, const vector<State>& inputs,
+		const vector<vector<vector<State>>>& delta, const State initialState, 
+		const vector<State> finalStates);
+	void setStates(const vector<State>& states) { _states = states; };
+	void setInputs(const vector<State>& inputs) { _inputs = inputs; };
+	void setDelta(const vector<vector<vector<State>>>& delta) { _delta = delta; };
+	void setInitialState(const State& initialState) { _initialState = initialState; };
+	void setFinalStates(const vector<State>& finalStates) { _finalStates = finalStates; };
+	vector<State> getStates() const { return _states; };
+	vector<State> getInputs() const { return _inputs; };
+	vector<vector<vector<State>>> getDelta() const { return _delta; };
+	State getInitialState() const { return _initialState; };
+	vector<State> getfinalStates() const { return _finalStates; };
 	
 	Automata convertToDFA();
 	Automata operator + (const Automata&) const;
-	bool isNewState(struct State, vector<struct State>);
-	bool findFinalStates(vector<struct State>);
-	bool pertenece(struct State, vector<struct State>);
-	void addNewState(struct State, vector<struct State>);
+	bool isNewState(State, vector<State>);
+	bool findFinalStates(vector<State>);
+	bool pertenece(State, vector<State>);
+	void addNewState(State, vector<State>);
 
 };
 
 //	--	implementation	--
 
-Automata::Automata(const vector<struct State>& states, const vector<struct State>& inputs,
-	const vector<vector<vector<struct State>>>& delta, const struct State initialState,
-	const vector<struct State> finalStates) : _states(states), _inputs(inputs), _delta(delta),
+Automata::Automata(const vector<State>& states, const vector<State>& inputs,
+	const vector<vector<vector<State>>>& delta, const State initialState,
+	const vector<State> finalStates) : _states(states), _inputs(inputs), _delta(delta),
 	_initialState(initialState), _finalStates(finalStates) {}
 
 Automata Automata::convertToDFA() {
@@ -94,12 +102,12 @@ Automata Automata::convertToDFA() {
 	//			8. si alguno de esos estados es un estado final, agregar a vector de estados finales
 
 	// temporal variables
-	queue<struct State> t_cola;
-	vector<struct State> t_states;
-	vector<struct State> t_inputs;
-	vector<vector<vector<struct State>>> t_delta;
-	struct State t_initialState;
-	vector<struct State> t_finalStates;
+	queue<State> t_cola;
+	vector<State> t_states;
+	vector<State> t_inputs;
+	vector<vector<vector<State>>> t_delta;
+	State t_initialState;
+	vector<State> t_finalStates;
 
 	// implementation
 	int it = 0; // iterate through delta
@@ -107,27 +115,29 @@ Automata Automata::convertToDFA() {
 	t_states.push_back(this->_states[idState]);
 	t_cola.push(t_states[idState]);
 	idState++;
-	t_delta.push_back(vector<vector<struct State>>());
+	t_delta.push_back(vector<vector<State>>());
 	while (!t_cola.empty())
 	{
-		struct State currentState = t_cola.front();
+		State currentState = t_cola.front();
 		t_cola.pop();
+		t_delta.push_back(vector<vector<State>>());
 		// evaluar simbolos
 		for (int s = 0; s < this->_inputs.size(); s++)
 		{
-			vector<struct State> outputStates = this->_delta[currentState.id][s];
+			vector<State> outputStates = this->_delta[currentState.getID()][s];
 			// construct name
 			// asign new state string se convertira en un solo estado
-			string aux = "{" + to_string(outputStates[0].id);
+			string aux = "{" + to_string(outputStates[0].getID());
 			for (int j = 1; j < outputStates.size(); j++) 
-				aux += "," + to_string(outputStates[s].id);
+				aux += "," + to_string(outputStates[s].getID());
 			aux += "}";
 			
-			struct State outputSingleState = { aux, -1 }; // si es estado nuevo, se le asigna id
+			State outputSingleState = { aux, -1 }; // si es estado nuevo, se le asigna id
 			t_delta[it][s].push_back(outputSingleState);
 			if (this->isNewState(outputSingleState, t_states))
 			{
-				outputSingleState.id = idState++;
+				outputSingleState.setID(idState);
+				idState++;
 				t_states.push_back(outputSingleState);
 				t_cola.push(outputSingleState);
 				if (this->findFinalStates(outputStates)) {
@@ -135,38 +145,39 @@ Automata Automata::convertToDFA() {
 				}
 			}
 		}
-		t_delta.push_back(vector<vector<struct State>>());
 		it++;
 	}
 
 }
 
-bool Automata::isNewState(struct State checkState , vector<struct State> states) {
+bool Automata::isNewState(State checkState , vector<State> states) {
 	this->pertenece(checkState, states);
 }
 
-bool Automata::findFinalStates(vector<struct State> checkStates) {
-	for (struct State state : checkStates)
+bool Automata::findFinalStates(vector<State> checkStates) {
+	for (State state : checkStates)
 		if (this->pertenece(state, this->_finalStates)) {
 			return true;
 		}
 	return false;
 }
 
-bool Automata::pertenece(struct State checkState, vector<struct State> states) {
-	for (struct State state : states) {
-		if (checkState.label.compare(state.label) == 0) {
+bool Automata::pertenece(State checkState, vector<State> states) {
+	for (State state : states) {
+		if (checkState.getLabel().compare(state.getLabel()) == 0) {
 			return false;
 		}
 	}
 	return true;
 }
 
-void Automata::addNewState(struct State state, vector<struct State> states) {
+void Automata::addNewState(State state, vector<State> states) {
 	if (!this->pertenece(state, states)) {
 		states.push_back(state);
 	}
 }
+
+///----------------------------------------------------------------------------------------------------------------------
 
 struct AutomataFinito {
 	Conjunto estados;
@@ -184,60 +195,60 @@ struct AFN {
 	Conjunto edosFinales;
 };
 
-Conjunto delta(Conjunto estados, int simbolo)
-{
-	for (int i = 0; i < estados.length; i++)
-	{
-		if (estados.elementos[i] == -1)
-	}
-}
+//Conjunto delta(Conjunto estados, int simbolo)
+//{
+//	for (int i = 0; i < estados.length; i++)
+//	{
+//		if (estados.elementos[i] == -1)
+//	}
+//}
 
-void fromNFAtoDFA(AFN af)
-{
-	vector<Conjunto> finalStates;
-	vector<Conjunto> states;
-	queue<Conjunto> cola;
-	Conjunto outputState;
-	// estado inicial no es conjunto, hay que convertirlo
-	//convert(int, conjuntode1);
-	Conjunto cEstadoInicial;
-	cEstadoInicial.length = 1;
-	cEstadoInicial.elementos = new int [1];
-	cEstadoInicial.elementos[0] = af.edoInicial;
-	cola.push(cEstadoInicial);
-	int c = 0;
-	while (!cola.empty())
-	{
-		Conjunto checkNewState;
-		Conjunto currentState = cola.front(); // {0} cEstadoInicial la primer vez
-		if (currentState.elementos[0] >= 0) // si no es el estado vacío
-		{
-			for (int estado = 0; estado < currentState.length; estado++)
-			{
-				for (int simbolo = 0; simbolo < af.simbolos.length; simbolo++)
-				{
-					outputState.length = af.delta[estado][simbolo].length;
-					outputState.elementos = new int [outputState.length];
-					for (int k = 0; k < outputState.length; k++)
-					{
-						outputState.elementos[k] = af.delta[estado][simbolo].elementos[k];
-					}
-					if (isNewState(outputState))
-					{
-						cola.push(outputState);
-						states.push_back(outputState);
-						if (checkForFinalStates(outputState))
-							finalStates.push_back(outputState);
-					}
-				}
-			}
-
-		}
-		
-		cola.pop();
-	}
-
-}
+//void fromNFAtoDFA(AFN af)
+//{
+//	vector<Conjunto> finalStates;
+//	vector<Conjunto> states;
+//	queue<Conjunto> cola;
+//	Conjunto outputState;
+//	// estado inicial no es conjunto, hay que convertirlo
+//	//convert(int, conjuntode1);
+//	Conjunto cEstadoInicial;
+//	cEstadoInicial.length = 1;
+//	cEstadoInicial.elementos = new int [1];
+//	cEstadoInicial.elementos[0] = af.edoInicial;
+//	cola.push(cEstadoInicial);
+//	int c = 0;
+//	while (!cola.empty())
+//	{
+//		Conjunto checkNewState;
+//		Conjunto currentState = cola.front(); // {0} cEstadoInicial la primer vez
+//		if (currentState.elementos[0] >= 0) // si no es el estado vacío
+//		{
+//			for (int estado = 0; estado < currentState.length; estado++)
+//			{
+//				for (int simbolo = 0; simbolo < af.simbolos.length; simbolo++)
+//				{
+//					outputState.length = af.delta[estado][simbolo].length;
+//					outputState.elementos = new int [outputState.length];
+//					for (int k = 0; k < outputState.length; k++)
+//					{
+//						outputState.elementos[k] = af.delta[estado][simbolo].elementos[k];
+//					}
+//					if (isNewState(outputState))
+//					{
+//						cola.push(outputState);
+//						states.push_back(outputState);
+//						if (checkForFinalStates(outputState))
+//							finalStates.push_back(outputState);
+//					}
+//				}
+//			}
+//
+//		}
+//		
+//		cola.pop();
+//	}
+//
+//}
 
 void printTable(bool** p, int n)
 {
@@ -383,29 +394,38 @@ AFN fillNFA()
 
 Automata fillFDA()
 {
-	Conjunto i_estados;
-	Conjunto i_simbolos;
-	int** i_delta;
-	int i_edoInicial;
-	Conjunto i_edosFinales;
+	vector<State> i_states;
+	vector<State> i_inputs;
+	vector<vector<vector<State>>> i_delta;
+	State i_initialState;
+	vector<State> i_finalStates;
 
-	cout << "Ingresa el número de estados y el numero de simbolos: ";
-	cin >> i_estados.length >> i_simbolos.length;
+	int numStates, numInputs;
+	cout << "Ingresa numero de estados y numero de simbolos del alfabeto: ";
+	cin >> numStates >> numInputs;
 	cout << endl;
 
-	i_estados.elementos = new int[i_estados.length];
-	for (int i = 0; i < i_estados.length; i++) i_estados.elementos[i] = i;
-
-	i_simbolos.elementos = new int[i_simbolos.length];
-	for (int i = 0; i < i_simbolos.length; i++) i_simbolos.elementos[i] = i;
-
-	i_delta = new int* [i_estados.length];
-	for (int i = 0; i < i_estados.length; i++)
+	State st;
+	for (int i = 0; i < numStates; i++)
 	{
-		cout << "Escriba separado con espacios los " << i_simbolos.length << " input del estado numero "
+		st._id = i;
+		st._label = "q" + to_string(i);
+		i_states.push_back(st);
+	}
+
+	
+	for (int i = 0; i < i_states.length; i++) i_states.elementos[i] = i;
+
+	i_inputs.elementos = new int[i_inputs.length];
+	for (int i = 0; i < i_inputs.length; i++) i_inputs.elementos[i] = i;
+
+	i_delta = new int* [i_states.length];
+	for (int i = 0; i < i_states.length; i++)
+	{
+		cout << "Escriba separado con espacios los " << i_inputs.length << " input del estado numero "
 			<< i << ": ";
-		i_delta[i] = new int[i_simbolos.length];
-		for (int j = 0; j < i_simbolos.length; j++)
+		i_delta[i] = new int[i_inputs.length];
+		for (int j = 0; j < i_inputs.length; j++)
 			cin >> i_delta[i][j];
 	}
 
@@ -420,7 +440,7 @@ Automata fillFDA()
 	for (int i = 0; i < i_edosFinales.length; i++)
 		cin >> i_edosFinales.elementos[i];
 
-	return { i_estados, i_simbolos, i_delta, i_edoInicial, i_edosFinales };
+	
 	
 }
 
