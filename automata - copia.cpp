@@ -6,17 +6,6 @@
 	- Proyecto 1: demostrar equivalencia entre dos AF
 	- Matemáticas Computacionales AD19
 
-	- Algoritmo:
-		1. Dado el input(M1, M2) donde M1 y M2 son DFAs, NFAs y/o expresiones regulares:
-		2. Convertir M1 y M2 a DFA. Si es necesario.
-		3. Construir una matriz nxn donde n es la suma de los estados de M1 con los estados de M2.
-			Solo se considerará el área de la diagonal inferior de la matriz
-		4. Marcar cada celda de la tabla como DISTINGUIBLE si uno de los estados es aceptado y el otro no.
-		5. Iterar hasta que ningún otro par de estados es marcado como distinguible
-			(a) para cada par de estados {p,q} que no ha sido marcado distinguible aún:
-				i. para cada simbolo en ai en el alfabeto si {p,q} no ha sido marcado distinguible:
-					A. si el par de estados {d(p,ai), d(p,ai)} es distinguible entonces marcar {p,q} como distinguible
-		6. Si los estados iniciales de los dos DFAs son marcados distinguibles entonces M1 y M2 NO son equivalentes
 */
 
 #include <iostream>
@@ -28,13 +17,6 @@
 #include <string>
 using namespace std;
 
-//struct Conjunto {
-//	int length;
-//	int* elementos;
-//};
-
-// struct state
-
 class State {
 	string _label;
 	vector<int> _id;
@@ -45,7 +27,7 @@ public:
 	void setLabel(string label);
 	void setID(vector<int> id);
 	string getLabel();
-	vector<int> getID();
+	vector<int> getID() const;
 
 	State operator + (const State&) const;
 	bool isEmptyState()
@@ -83,8 +65,6 @@ State State::operator + (const State& state2) const {
 	result.setLabel(aux);
 	result.setID(states);
 	return result;
-			
-
 }
 
 class Automata
@@ -120,6 +100,8 @@ public:
 	bool findFinalStates(vector<State>);
 	bool pertenece(State, vector<State>);
 	void addNewState(State, vector<State>);
+	void shift(int);
+	void rename();
 
 };
 
@@ -205,107 +187,102 @@ Automata Automata::convertToDFA() {
 }
 
 bool Automata::isIn(State checkState , vector<State> states) {
-	for (State state : states)
+	bool is = false;
+	vector<int> checkStates = checkState.getID();
+	for (int i = 0; i < states.size(); i++)
 	{
-		if (checkState)
-	}
-}
-
-bool Automata::pertenece(State checkState, vector<State> states) {
-	for (State state : states) {
-		if (checkState.getLabel().compare(state.getLabel()) == 0) {
-			return false;
+		if (checkStates.size() == states[i].getID().size())
+		{
+			is = true;
+			for (int j = 0; j < checkStates.size(); j++)
+				if (checkStates[j] != states[i].getID()[j])
+					is = false;
+			if (is) return true;
 		}
 	}
-	return true;
-}
-
-void Automata::addNewState(State state, vector<State> states) {
-	if (!this->pertenece(state, states)) {
-		states.push_back(state);
-	}
-}
-
-///----------------------------------------------------------------------------------------------------------------------
-
-bool findStateWithID(vector<int> ids, int id)
-{
-	for (int i = 0; i < ids.size(); i++)
-		if (ids[i] == id)
-			return true;
 	return false;
 }
 
-struct AutomataFinito {
-	Conjunto estados;
-	Conjunto simbolos;
-	int** delta;
-	int edoInicial;
-	Conjunto edosFinales;
-};
+void Automata::shift(int n)
+{
+	for (int i = 0; i < this->_states.size(); i++)
+	{
+		for (int k = 0; k < this->_states[i].getID().size(); k++)
+		{
+			this->_states[i].getID()[k] += n;
+		}
+	}
 
-struct AFN {
-	Conjunto estados;
-	Conjunto simbolos;
-	Conjunto** delta;
-	int edoInicial;
-	Conjunto edosFinales;
-};
 
-//Conjunto delta(Conjunto estados, int simbolo)
-//{
-//	for (int i = 0; i < estados.length; i++)
-//	{
-//		if (estados.elementos[i] == -1)
-//	}
-//}
+	for (int i = 0; i < this->_delta.size(); i++)
+	{
+		for (int j = 0; j < this->_delta[i].size(); j++)
+		{
+			for (int k = 0; k < this->_delta[i][j].getID().size(); k++)
+			{
+				this->_delta[i][j].getID()[k] += n;
+			}
+		}
+	}
 
-//void fromNFAtoDFA(AFN af)
-//{
-//	vector<Conjunto> finalStates;
-//	vector<Conjunto> states;
-//	queue<Conjunto> cola;
-//	Conjunto outputState;
-//	// estado inicial no es conjunto, hay que convertirlo
-//	//convert(int, conjuntode1);
-//	Conjunto cEstadoInicial;
-//	cEstadoInicial.length = 1;
-//	cEstadoInicial.elementos = new int [1];
-//	cEstadoInicial.elementos[0] = af.edoInicial;
-//	cola.push(cEstadoInicial);
-//	int c = 0;
-//	while (!cola.empty())
-//	{
-//		Conjunto checkNewState;
-//		Conjunto currentState = cola.front(); // {0} cEstadoInicial la primer vez
-//		if (currentState.elementos[0] >= 0) // si no es el estado vacío
-//		{
-//			for (int estado = 0; estado < currentState.length; estado++)
-//			{
-//				for (int simbolo = 0; simbolo < af.simbolos.length; simbolo++)
-//				{
-//					outputState.length = af.delta[estado][simbolo].length;
-//					outputState.elementos = new int [outputState.length];
-//					for (int k = 0; k < outputState.length; k++)
-//					{
-//						outputState.elementos[k] = af.delta[estado][simbolo].elementos[k];
-//					}
-//					if (isNewState(outputState))
-//					{
-//						cola.push(outputState);
-//						states.push_back(outputState);
-//						if (checkForFinalStates(outputState))
-//							finalStates.push_back(outputState);
-//					}
-//				}
-//			}
-//
-//		}
-//		
-//		cola.pop();
-//	}
-//
-//}
+	this->_initialState.getID().front() += n;
+
+	for (int i = 0; i < this->_finalStates.size(); i++)
+	{
+		for (int k = 0; k < this->_finalStates[i].getID().size(); k++)
+		{
+			this->_finalStates[i].getID()[k] += n;
+		}
+	}
+
+}
+
+Automata Automata::operator + (const Automata& a2) const
+{
+	// NOTA: AMBOS DEBEN SER DFA PARA QUE FUNCIONE
+	if (this->_isNFA || a2._isNFA) return Automata();
+	vector<State> t_states;
+	vector<State> t_inputs = this->_inputs;
+	vector<vector<State>> t_delta;
+	State t_initialState;
+	vector<State> t_finalStates;
+
+	for (int i = 0; i < this->_states.size(); i++)
+		t_states.push_back(this->_states[i]);
+	for (int i = 0; i < a2._states.size(); i++)
+		t_states.push_back(a2._states[i]);
+	
+
+	// delta
+	// construir delta
+	for (int i = 0; i < t_states.size(); i++)
+	{
+		vector<State> fila = vector<State>();
+		for (int j = 0; j < t_inputs.size(); j++)
+		{
+			State col = State();
+			fila.push_back(col);
+		}
+		t_delta.push_back(fila);
+	}
+	for (int i = 0; i < this->_states.size(); i++)
+		for (int j = 0; j < t_inputs.size(); j++)
+			t_delta[i][j] = this->_delta[i][j];
+	for (int i = this->_states.size(); i < a2._states.size() + this->_states.size(); i++)
+		for (int j = 0; j < t_inputs.size(); j++)
+			t_delta[i][j] = a2._delta[i - this->_states.size()][j];
+
+	// initialState
+	this->_initialState.getID().push_back(a2._initialState.getID().front());
+
+	// finalStates
+	for (int i = 0; i < this->_finalStates.size(); i++)
+		t_finalStates.push_back(this->_finalStates[i]);
+	for (int i = 0; i < a2._finalStates.size(); i++)
+		t_finalStates.push_back(a2._finalStates[i]);
+}
+
+///----------------------------------------------------------------------------------------------------------------------
 
 void printTable(bool** p, int n)
 {
@@ -347,107 +324,13 @@ void printInequivalent(bool** p, int n, int iS, int jS)
 	}
 }
 
-//void findState(int* states, int n, int state)
+
+//bool isFinalState(int state, AutomataFinito afd)
 //{
-//	for (int i = 0; i < )
+//	for (int i = 0; i < afd.edosFinales.length; i++)
+//		if (state == afd.edosFinales.elementos[i]) return true;
+//	return false;
 //}
-
-
-//AutomataFinito unir(AutomataFinito afd1, AutomataFinito afd2)
-//{
-//	AutomataFinito afd;
-//	// estados
-//	afd.estados.length = afd1.estados.length + afd2.estados.length;
-//	afd.estados.elementos = new int[afd.estados.length];
-//	for (int i = 0; i < afd1.estados.length; i++)
-//		afd.estados.elementos[i] = afd1.estados.elementos[i];
-//	int desp = afd1.estados.length; // desplazamiento
-//	for (int i = 0; i < afd2.estados.length; i++)
-//		/*afd.estados.elementos[i + desp] = afd2.estados.elementos[i] + desp;*/
-//	// delta
-//	
-//
-//}
-
-int edosIniciales[2]; // almacena el estado inicial del afd1 y el del afd2
-bool isInitialState(int state)
-{
-	for (int i = 0; i < 2; i++)
-		if (state == edosIniciales[i])
-			return true;
-	return false;
-}
-
-bool isFinalState(int state, AutomataFinito afd)
-{
-	for (int i = 0; i < afd.edosFinales.length; i++)
-		if (state == afd.edosFinales.elementos[i]) return true;
-	return false;
-}
-
-AFN fillNFA()
-{
-	Conjunto i_estados;
-	Conjunto i_simbolos;
-	Conjunto** i_delta;
-	int i_edoInicial;
-	Conjunto i_edosFinales;
-
-	cout << "Ingresa el número de estados y el numero de simbolos: ";
-	cin >> i_estados.length >> i_simbolos.length;
-	cout << endl;
-
-	i_estados.elementos = new int[i_estados.length];
-	for (int i = 0; i < i_estados.length; i++) i_estados.elementos[i] = i;
-
-	i_simbolos.elementos = new int[i_simbolos.length];
-	for (int i = 0; i < i_simbolos.length; i++) i_simbolos.elementos[i] = i;
-
-	char r;
-	i_delta = new Conjunto* [i_estados.length];
-	for (int i = 0; i < i_estados.length; i++)
-	{
-		
-		i_delta[i] = new Conjunto[i_simbolos.length];
-		for (int j = 0; j < i_simbolos.length; j++)
-		{
-			cout << "Estado " << i << " input " << j << endl;
-			cout << "Escriba el numero de estados resultantes de |d(" << i << "," << j << ")|= ";
-			cin >> r;
-			int n = r - '0';
-			if (n > 0){
-				i_delta[i][j].length = n;
-				i_delta[i][j].elementos = new int[n];
-				cout << "Escriba separado por espacios los estados output de " <<
-					"|d(" << i << ", " << j << ") |= ";
-				for (int k = 0; k < r - '0'; k++)
-				{
-					cin >> i_delta[i][j].elementos[k];
-				}
-			}
-			else
-			{
-				// conjunto vacío
-				i_delta[i][j].length = 1;
-				i_delta[i][j].elementos = new int[1];
-				i_delta[i][j].elementos[0] = -1;
-			}
-
-		}	
-	}
-
-	cout << "Cual es el estado inicial? ";
-	cin >> i_edoInicial;
-	cout << endl;
-
-	cout << "Cuantos estados finales hay? ";
-	cin >> i_edosFinales.length;
-	i_edosFinales.elementos = new int[i_edosFinales.length];
-	cout << "Cuales son los " << i_edosFinales.length << " estados ? ";
-	for (int i = 0; i < i_edosFinales.length; i++)
-		cin >> i_edosFinales.elementos[i];
-	return { i_estados, i_simbolos, i_delta, i_edoInicial, i_edosFinales };
-}
 
 Automata fillAutomata()
 {
@@ -551,18 +434,42 @@ Automata fillAutomata()
 	if (isNFA) aut.toggleNFA();
 	return aut;
 }
+/*
+	-Algoritmo:
+	1. Dado el input(M1, M2) donde M1 y M2 son DFAs, NFAs y / o expresiones regulares :
+	2. Convertir M1 y M2 a DFA.Si es necesario.
+	3. Construir una matriz nxn donde n es la suma de los estados de M1 con los estados de M2.
+	Solo se considerará el área de la diagonal inferior de la matriz
+	4. Marcar cada celda de la tabla como DISTINGUIBLE si uno de los estados es aceptado y el otro no.
+	5. Iterar hasta que ningún otro par de estados es marcado como distinguible
+	(a) para cada par de estados {
+		p, q
+	} que no ha sido marcado distinguible aún :
+	i.para cada simbolo en ai en el alfabeto si{ p,q } no ha sido marcado distinguible :
+	A.si el par de estados{ d(p,ai), d(p,ai) } es distinguible entonces marcar{ p,q } como distinguible
+	6. Si los estados iniciales de los dos DFAs son marcados distinguibles entonces M1 y M2 NO son equivalentes
+*/
 
-void tableFillingAlgorithm(AutomataFinito afd1, AutomataFinito afd2)
+bool isInitialState(State initialState, int n)
 {
-	//if (afd1.simbolos.length != afd2.simbolos.length) return; // no tienen el mismo alfabeto
-	AutomataFinito afdM = afd1;
-	edosIniciales[0] = 0;
-	edosIniciales[1] = 4;
-	// join two AFD
+	for (int state : initialState.getID())
+	{
+		if (n == state) return true;
+	}
+	return false;
+}
 
+void tableFillingAlgorithm(Automata afd1, Automata afd2)
+{
+	Automata afdM = afd1 + afd2;
 
+	
 	// construir matriz nxn, solo la diagonal inferior
-	bool** matrix = new bool* [afdM.estados.length];
+	int n = afdM.getStates.size();
+	vector<vector<bool>> matrix;
+	for (int i = 0; i < n; i++)
+		matrix.push_back(vector<bool>(i, false));
+
 	int estado_i,
 		estado_j,
 		diag;
@@ -570,29 +477,20 @@ void tableFillingAlgorithm(AutomataFinito afd1, AutomataFinito afd2)
 		noted,
 		equivalente;
 
-	//preparacion
-	diag = 1;
-	for (estado_i = 1; estado_i < afdM.estados.length; estado_i++)
-	{
-		matrix[estado_i] = new bool[diag];
-		for (estado_j = 0; estado_j < diag; estado_j++)
-			matrix[estado_i][estado_j] = 0;
-		diag++;
-	}
-	printTable(matrix, afdM.estados.length);
-	cout << endl;
+	
 	// initialTable
 	diag = 1;
-	for (estado_i = 1; estado_i < afdM.estados.length; estado_i++)
+	for (estado_i = 1; estado_i < afdM.getStates().size(); estado_i++)
 	{
 		for (estado_j = 0; estado_j < diag; estado_j++)
 		{
-			if (isFinalState(estado_i, afdM) != isFinalState(estado_j, afdM))
+			if (afdM.isIn(afdM.getStates()[estado_i], afdM.getfinalStates()) != 
+				afdM.isIn(afdM.getStates()[estado_j], afdM.getfinalStates()))
 				matrix[estado_i][estado_j] = !matrix[estado_i][estado_j];
 		}
 		diag++;
 	}
-	printTable(matrix, afdM.estados.length);
+	//printTable(matrix, afdM.estados.length);
 	cout << endl;
 
 	// algorithm
@@ -602,7 +500,7 @@ void tableFillingAlgorithm(AutomataFinito afd1, AutomataFinito afd2)
 	while (cambios)
 	{
 		diag = 1;
-		for (estado_i = 1; estado_i < afdM.estados.length; estado_i++)
+		for (estado_i = 1; estado_i < afdM.getStates.size(); estado_i++)
 		{
 			for (estado_j = 0; estado_j < diag; estado_j++)
 			{
@@ -610,33 +508,34 @@ void tableFillingAlgorithm(AutomataFinito afd1, AutomataFinito afd2)
 				if (!matrix[estado_i][estado_j])
 				{
 					bool isDistinguishable = false;
-					for (int k = 0; k < afdM.simbolos.length; k++)
+					for (int k = 0; k < afdM.getInputs().size(); k++)
 					{
-						int nuevo_i = afdM.delta[estado_i][k];
-						int nuevo_j = afdM.delta[estado_j][k];
+						State nuevo_i = afdM.getDelta[estado_i][k];
+						State nuevo_j = afdM.getDelta[estado_j][k];
 
-						if (isFinalState(nuevo_i, afdM) || isFinalState(nuevo_j, afdM)) 
+						if (afdM.isIn(nuevo_i, afdM.getfinalStates()) || afdM.isIn(nuevo_j, afdM.getfinalStates()))
 							isDistinguishable = true;
-						else if (nuevo_i > nuevo_j) 
-						{
-							if (matrix[nuevo_i][nuevo_j]) 
-								isDistinguishable = true;
-						}
-						else if (nuevo_i < nuevo_j)
-						{
-							if (matrix[nuevo_j][nuevo_i]) 
-								isDistinguishable = true;
+						else {
+							int nuevo_iID = nuevo_i.getID().front();
+							int nuevo_jID = nuevo_j.getID().front();
+							if (nuevo_iID > nuevo_jID) 
+								if (matrix[nuevo_iID][nuevo_jID]) 
+									isDistinguishable = true;
+							else if (nuevo_iID < nuevo_jID)
+								if (matrix[nuevo_jID][nuevo_iID]) 
+									isDistinguishable = true;
 						}
 
 						if (isDistinguishable)
 						{
 							matrix[estado_i][estado_j] = !matrix[estado_i][estado_j];
 							if (!noted) noted = true;
-							if (isInitialState(estado_i) && isInitialState(estado_j))
+							if (isInitialState(afdM.getInitialState(), estado_i) && isInitialState(afdM.getInitialState(),
+								estado_j))
 							{
 								equivalente = false;
 								cout << "NO SON EQUIVALENTES: " << endl;
-								printInequivalent(matrix, afdM.estados.length, estado_i, estado_j);
+								//printInequivalent(matrix, afdM.estados.length, estado_i, estado_j);
 								return;
 							}
 							break;
@@ -647,7 +546,7 @@ void tableFillingAlgorithm(AutomataFinito afd1, AutomataFinito afd2)
 			diag++;
 		}
 		if (!noted || !equivalente) cambios = false;
-		printTable(matrix, afdM.estados.length);
+		//printTable(matrix, afdM.estados.length);
 		cout << endl;
 	}
 }
@@ -658,6 +557,8 @@ int main()
 	if (aut1.isNFA()) aut1.convertToDFA();
 	Automata aut2 = fillAutomata();
 	if (aut2.isNFA()) aut2.convertToDFA();
+	aut2.shift(aut1.getStates().size());
+	tableFillingAlgorithm(aut1, aut2);
 
 	return 0;
 }
