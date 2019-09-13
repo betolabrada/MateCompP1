@@ -50,14 +50,40 @@ public:
 	State operator + (const State&) const;
 	bool isEmptyState()
 	{
-		return this->_id == -1;
+		return this->_id.front() == -1;
 	}
 };
 // -- implementacion --
 State State::operator + (const State& state2) const {
 	State result;
-	result._id = 0;
-	result._label = "";
+	vector<int> states;
+	int largest = this->_id.size() > state2._id.size() ? this->_id.size() : state2._id.size;
+	for (int i = 0; i < this->_id.size(); i++)
+	{
+		states.push_back(this->_id[i]);
+	}
+	bool isAlready;
+	for (int i = 0; i < state2._id.size(); i++)
+	{
+		isAlready = false;
+		for (int j = 0; j < states.size(); j++)
+			if (state2._id[i] == states[j])
+			{
+				isAlready = true;
+				break;
+			}
+		if (!isAlready)
+			states.push_back(state2._id[i]);
+	}
+	sort(states.begin(), states.end());
+	string aux = "{" + states[0];
+	for (int i = 1; i < states.size(); i++)
+		aux += "," + states[i];
+	aux += "}";
+	result.setLabel(aux);
+	result.setID(states);
+	return result;
+			
 
 }
 
@@ -134,37 +160,32 @@ Automata Automata::convertToDFA() {
 	vector<State> t_finalStates;
 
 	// implementation
-	int it = 0; // iterate through delta
-	int idState = 0; // for new states;
-	t_states.push_back(this->_states[it]); // insert q0
-	t_cola.push(t_states[it]); // insert q0 a la cola
+	int i = 0,
+		j,
+		k; // iterate through delta
+	t_states.push_back(this->_states[i]); // insert q0 a la lista de estados
+	t_cola.push(t_states[i]); // insert q0 a la cola
 	State outputState; // estado(s) resultante(s) de delta
-	State currentState; // estado actualmente en la cola
-
+	State currentState; // estado actualmente en proceso tras ser sacado de la cola
+	t_delta.resize(this->_delta.size());
+	int sts; // states in state
 	while (!t_cola.empty())
 	{
 		currentState = t_cola.front();
 		t_cola.pop();
 		t_delta.push_back(vector<State>()); // haces nueva fila
+		
+		//unico estado
 		// evaluar simbolos
-		if (currentState.getID().size() == 1)
-		for (int s = 0; s < this->_inputs.size(); s++)
+		for (j = 0; j < this->_inputs.size(); j++)
 		{
-			outputState = this->_delta[currentState.getID().front()][s];
-			//if (outputState.getID().size() > 1)
-			//{
-			//	// unificar
-			//	// sort by id
-			//	// construct name
-			//	// en teoria los label deben ser iguales entonces 
-			//	// checar si ARREGLOS son iguales;
-			//	
-			//	
-			//}
-			//else
-			//{
-			//	outputState = outputStates.getID.front();
-			//}
+			for (sts = 0; sts < currentState.getID().size(); sts++)
+			{
+				if (outputState.isEmptyState())
+					outputState = this->_delta[currentState.getID()[sts]][j];
+				else if (!this->_delta[currentState.getID()[sts]][j].isEmptyState())
+					outputState = outputState + this->_delta[currentState.getID()[sts]][j];
+			}
 			if (!this->isIn(outputState, t_states))
 			{
 				// es nuevo estado
@@ -175,49 +196,19 @@ Automata Automata::convertToDFA() {
 				// si el estado (o algunos de los estados) de outputstate es final, outputstate es final
 				if (this->isIn(outputState, this->_finalStates))
 					t_finalStates.push_back(outputState);
-				
-				
 			}
 			// insertar en delta
-			t_delta[it][s].push_back(outputState);
+			t_delta[i][j] = outputState;
 		}
-		else
-		{
-			// cambia la logica, se sacan los estados resultantes de un mismo input y se unen
-			// sis: state in state
-			State st;
-			for (int inp = 0; inp < t_inputs.size(); inp++)
-			{
-				for (int sis = 0; sis < currentState.getStates().size(); sis++)
-				{
-					for (int k = 0; k < this->_delta[sis][inp].size(); k++)
-					{
-						outputState = this->_delta[sis][inp][k];
-						if (!outputState.isEmptyState())
-							st = st + outputState; // unelo solo si no es el estado vacío
-					}
-					
-				}
-				if ()
-				
-
-			}
-		}
-		it++;
+		i++;
 	}
-
 }
 
 bool Automata::isIn(State checkState , vector<State> states) {
-	this->pertenece(checkState, states);
-}
-
-bool Automata::findFinalStates(vector<State> checkStates) {
-	for (State state : checkStates)
-		if (this->pertenece(state, this->_finalStates)) {
-			return true;
-		}
-	return false;
+	for (State state : states)
+	{
+		if (checkState)
+	}
 }
 
 bool Automata::pertenece(State checkState, vector<State> states) {
