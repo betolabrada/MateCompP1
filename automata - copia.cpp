@@ -29,7 +29,7 @@ public:
 	string getLabel() { return this->_label; };
 	vector<int> getID() const { return this->_id; };
 
-	bool isEmptyState() { return this->_id.front() == -1; };
+	bool isEmptyState() const { return this->_id.front() == -1; };
 	State operator + (const State&) const;
 	// operator += for later
 	void shift(int);
@@ -37,6 +37,8 @@ public:
 // -- implementacion --
 
 State State::operator + (const State& state2) const {
+	if (this->isEmptyState()) return state2;
+	if (state2.isEmptyState()) return *this;
 	State result;
 	vector<int> states;
 	int largest = this->_id.size() > state2._id.size() ? this->_id.size() : state2._id.size();
@@ -159,23 +161,31 @@ void Automata::convertToDFA() {
 	t_cola.push(t_states[i]); // insert q0 a la cola
 	State outputState; // estado(s) resultante(s) de delta
 	State currentState; // estado actualmente en proceso tras ser sacado de la cola
-	t_delta.resize(this->_delta.size());
 	int sts; // states in state
 	while (!t_cola.empty())
 	{
 		currentState = t_cola.front();
 		t_cola.pop();
 		t_delta.push_back(vector<State>()); // haces nueva fila
-		
+		if (currentState.isEmptyState())
+		{
+			for (j = 0; j < this->_inputs.size(); j++)
+			{
+				t_delta[i].push_back(currentState);
+			}
+			i++;
+			continue;
+		}
 		//unico estado
 		// evaluar simbolos
 		for (j = 0; j < this->_inputs.size(); j++)
 		{
-			for (sts = 0; sts < currentState.getID().size(); sts++)
+			outputState = this->_delta[currentState.getID()[0]][j];
+			for (sts = 1; sts < currentState.getID().size(); sts++)
 			{
-				if (!this->_delta[currentState.getID()[sts]][j].isEmptyState())
-					outputState = outputState + this->_delta[currentState.getID()[sts]][j];
+				outputState = outputState + this->_delta[currentState.getID()[sts]][j];
 			}
+			t_delta[i].push_back(outputState);
 			if (!this->isIn(outputState, t_states))
 			{
 				// es nuevo estado
@@ -192,30 +202,47 @@ void Automata::convertToDFA() {
 					t_finalStates.push_back(outputState);
 			}
 			// insertar en delta
-			t_delta[i][j] = outputState;
 		}
 		i++;
 	}
 	this->_states = t_states;
-	this->_inputs = t_inputs;
 	this->_delta = t_delta;
-	this->_initialState = t_initialState;
 	this->_finalStates = t_finalStates;
 }
 
 bool Automata::isIn(State checkState , vector<State> states) {
 	bool is = false;
-	vector<int> checkStates = checkState.getID();
-	for (int i = 0; i < states.size(); i++)
+	if (checkState.getID().size() > 1)
 	{
-		if (checkStates.size() == states[i].getID().size())
+		vector<int> statesInCheckState = checkState.getID();
+		for (int i = 0; i < statesInCheckState.size(); i++)
 		{
-			is = true;
-			for (int j = 0; j < checkStates.size(); j++)
-				if (checkStates[j] != states[i].getID()[j])
-					is = false;
-			if (is) return true;
+			for (int j = 0; j < states.size(); j++)
+			{
+				vector<int> statesInState = states[j].getID();
+				for (int k = 0; k < statesInState.size(); k++)
+				{
+					if (statesInCheckState[i] == statesInState[j])
+						return true;
+				}
+			}
 		}
+	}
+	else
+	{
+		vector<int> checkStates = checkState.getID();
+		for (int i = 0; i < states.size(); i++)
+		{
+			if (checkStates.size() == states[i].getID().size())
+			{
+				is = true;
+				for (int j = 0; j < checkStates.size(); j++)
+					if (checkStates[j] != states[i].getID()[j])
+						is = false;
+				if (is) return true;
+			}
+		}
+
 	}
 	return false;
 }
