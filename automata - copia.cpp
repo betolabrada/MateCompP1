@@ -20,14 +20,21 @@ using namespace std;
 class State {
 	string _label;
 	vector<int> _id;
+	string _FDAlabel;
+	int _FDAID;
 public:
 	State() : _label(""), _id(vector<int>()) {}; // estado vacío
 	State(string label, vector<int> id) : _label(label), _id(id) {};
 	State(const State& copyState) { this->_label = copyState._label; this->_id = copyState._id; }
 	void setLabel(string label) { this->_label = label; };
 	void setID(vector<int> id) { this->_id = id; };
+	void setFDAlabel(string label) { _FDAlabel = label; };
+	void setFDAID(int id) { _FDAID = id; };
 	string getLabel() { return this->_label; };
 	vector<int> getID() const { return this->_id; };
+	string getFDAlabel() { return this->_FDAlabel; };
+	int getFDAID() { return _FDAID; };
+	
 
 	bool isEmptyState() const { return this->_id.front() == -1; };
 	State operator + (const State&) const;
@@ -157,6 +164,7 @@ void Automata::convertToDFA() {
 	int i = 0,
 		j,
 		k; // iterate through delta
+	int id = 0;
 	t_states.push_back(this->_states[i]); // insert q0 a la lista de estados
 	t_cola.push(t_states[i]); // insert q0 a la cola
 	State outputState; // estado(s) resultante(s) de delta
@@ -205,6 +213,16 @@ void Automata::convertToDFA() {
 		}
 		i++;
 	}
+	//string aux = "";
+	//for (int id = 0; id < t_states.size(); id++)
+	//{
+	//	t_states[id].setFDAID(id);
+	//	aux += "{" + to_string(id) + "}";
+	//	t_states[id].setFDAlabel(aux);
+	//	aux.clear();
+
+	//}
+
 	this->_states = t_states;
 	this->_delta = t_delta;
 	this->_finalStates = t_finalStates;
@@ -278,8 +296,7 @@ void Automata::shift(int n)
 
 Automata Automata::operator + (const Automata& a2) const
 {
-	// NOTA: AMBOS DEBEN SER DFA PARA QUE FUNCIONE
-	if (this->_isNFA || a2._isNFA) return Automata();
+	
 	vector<State> t_states;
 	vector<State> t_inputs = this->_inputs;
 	vector<vector<State>> t_delta;
@@ -367,7 +384,7 @@ void printAtCell(vector<vector<bool>> p, int n, int iS, int jS)
 			else
 			{
 				if (i == iS && j == jS) cout << setw(5) << "->0";
-				cout << setw(5) << '0';
+				else cout << setw(5) << '0';
 			}
 		}
 		diag++;
@@ -521,6 +538,7 @@ bool isDistinguishable(Automata afdM, int estado_i, int estado_j, vector<vector<
 
 		int nuevo_iID = nuevo_i.getID().front();
 		int nuevo_jID = nuevo_j.getID().front();
+		
 		if (nuevo_iID > nuevo_jID)
 		{
 			if (matrix[nuevo_iID][nuevo_jID])
@@ -532,6 +550,7 @@ bool isDistinguishable(Automata afdM, int estado_i, int estado_j, vector<vector<
 				return true;
 		}
 	}
+	return false;
 
 }
 
@@ -561,9 +580,20 @@ void tableFillingAlgorithm(Automata afd1, Automata afd2)
 	{
 		for (estado_j = 0; estado_j < diag; estado_j++)
 		{
-			if (afdM.isIn(afdM.getStates()[estado_i], afdM.getfinalStates()) != 
+			if (afdM.isIn(afdM.getStates()[estado_i], afdM.getfinalStates()) !=
 				afdM.isIn(afdM.getStates()[estado_j], afdM.getfinalStates()))
+			{
 				matrix[estado_i][estado_j] = !matrix[estado_i][estado_j];
+				if (isInitialState(afdM.getInitialState(), estado_i) && isInitialState(afdM.getInitialState(),
+					estado_j))
+				{
+					equivalente = false;
+					cout << "NO SON EQUIVALENTES " << endl;
+					//printAtCell(matrix, n, estado_i, estado_j);
+					cout << endl;
+					return; // ya podemos terminar
+				}
+			}
 		}
 		diag++;
 	}
@@ -584,7 +614,6 @@ void tableFillingAlgorithm(Automata afd1, Automata afd2)
 		{
 			for (estado_j = 0; estado_j < diag; estado_j++)
 			{
-
 				if (!matrix[estado_i][estado_j])
 				{
 					bool distinct = isDistinguishable(afdM, estado_i, estado_j, matrix);
@@ -597,7 +626,7 @@ void tableFillingAlgorithm(Automata afd1, Automata afd2)
 						{
 							equivalente = false;
 							cout << "NO SON EQUIVALENTES " << endl;
-							//printAtCell(matrix, n, estado_i, estado_j);
+							printAtCell(matrix, n, estado_i, estado_j);
 							cout << endl;
 							return; // ya podemos terminar
 						}
